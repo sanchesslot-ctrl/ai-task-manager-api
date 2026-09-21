@@ -1,3 +1,4 @@
+
 const express = require('express');
 const cors = require('cors');
 const app = express();
@@ -10,7 +11,7 @@ let tasks = [
 ];
 
 app.get('/', (req, res) => {
-  res.json({ status: "API is live 🚀", author: "sanchesslot-ctrl" });
+  res.json({ status: "SANCHEZ SLOT API IS LIVE 🔥", ai: "sanches-slot" });
 });
 
 app.get('/api/tasks', (req, res) => res.json(tasks));
@@ -22,10 +23,9 @@ app.post('/api/tasks', (req, res) => {
 });
 
 app.get('/api/tasks/summary', (req, res) => {
-  res.json({ 
-    summary: `You have ${tasks.length} tasks. ${tasks.filter(t=>!t.done).length} pending. Focus!`,
-    ai_generated: true,
-    model: "gpt-4o-mini"
+  res.json({
+    summary: `You have ${tasks.length} tasks`,
+    ai_generated: true
   });
 });
 
