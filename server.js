@@ -5,49 +5,65 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// --- Usage Tracker ---
+const PAYPAL_EMAIL = 'sanchesslot@gmail.com';
 let totalVisits = 0;
-app.use((req, res, next) => {
+let visits = [];
+let liveUsers = {};
+let totalEarned = 0;
+
+// Track
+app.use((req,res,next)=>{
   totalVisits++;
-  console.log(`Visit #${totalVisits} - ${req.path}`);
+  const ip = req.headers['x-forwarded-for'] || req.ip || 'Nairobi';
+  visits.push({time: new Date(), path: req.path, ip: ip});
+  if(visits.length>100) visits.shift();
+  const id = ip;
+  liveUsers[id] = {lastSeen: Date.now(), ip: ip, city: 'Nairobi'};
   next();
 });
 
-let tasks = [
-  { id: 1, title: "Build Arc portfolio", priority: "high", done: false }
-];
+// Clean old live users
+setInterval(()=>{
+  const now = Date.now();
+  for(let k in liveUsers){
+    if(now - liveUsers[k].lastSeen > 60000) delete liveUsers[k];
+  }
+},10000);
 
-app.get('/', (req, res) => {
-  res.json({ 
-    status: "API IS LIVE", 
-    total_visits: totalVisits 
-  });
+app.get('/', (req,res)=>{
+  res.send(`
+  <h1>AI Task Manager API LIVE</h1>
+  <p>PayPal: ${PAYPAL_EMAIL}</p>
+  <p>Total Visits: ${totalVisits}</p>
+  <p>Live Now: ${Object.keys(liveUsers).length}</p>
+  <p><a href="/admin/stats">View Admin Stats</a></p>
+  <hr>
+  <h3>PayPal $2 Payment Test</h3>
+  <button onclick="pay()">Pay $2 to ${PAYPAL_EMAIL}</button>
+  <script>
+  async function pay(){
+    alert('PayPal will be connected after you add PAYPAL keys in Render. For now tracking is LIVE!');
+  }
+  </script>
+  `);
 });
 
-app.get('/api/tasks', (req, res) => res.json(tasks));
-
-app.post('/api/tasks', (req, res) => {
-  const newTask = { id: tasks.length + 1, ...req.body };
-  tasks.push(newTask);
-  res.json(newTask);
-});
-
-app.get('/api/stats', (req, res) => {
+app.get('/admin/stats', (req,res)=>{
   res.json({
+    status: "API IS LIVE - NEW CODE",
+    paypal_email: PAYPAL_EMAIL,
     total_visits: totalVisits,
-    total_tasks: tasks.length,
-    message: `${totalVisits} people have used your API so far!`
+    live_now: Object.keys(liveUsers).length,
+    live_users: Object.values(liveUsers),
+    total_earned: "$" + totalEarned,
+    last_20_visits: visits.slice(-20).reverse(),
+    message: "NEW CODE IS WORKING!"
   });
 });
 
-app.post('/api/pay', (req, res) => {
-  const { phone, amount } = req.body;
-  res.json({ 
-    success: true, 
-    message: `Payment of KES ${amount} from ${phone} received!`,
-    api_key: "PREMIUM_" + Date.now()
-  });
+app.get('/api/stats', (req,res)=>{
+  res.json({totalVisits, liveNow: Object.keys(liveUsers).length});
 });
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`API LIVE on ${PORT}`));
+app.listen(PORT, ()=> console.log('LIVE on '+PORT));
